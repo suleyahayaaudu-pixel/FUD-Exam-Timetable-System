@@ -43,6 +43,7 @@ console.log('FUD LOGO PATH:');
 console.log(LOGO_PATH);
 console.log('LOGO EXISTS:', fs.existsSync(LOGO_PATH));
 console.log('==================================================');
+
 // ==========================================================
 // IMAGE VALIDATION
 // ==========================================================
@@ -80,7 +81,6 @@ const getImageExtension = (buffer) => {
 
     return null;
 };
-
 
 // ==========================================================
 // FIND VALID LOGO
@@ -136,7 +136,6 @@ const getValidLogo = () => {
     return null;
 };
 
-
 // ==========================================================
 // SAFE STRING
 // ==========================================================
@@ -152,7 +151,6 @@ const safeString = (value) => {
 
     return String(value).trim();
 };
-
 
 // ==========================================================
 // DATE HELPERS
@@ -190,7 +188,6 @@ const getDateObject = (value) => {
     return parsed;
 };
 
-
 const formatLongDate = (value) => {
 
     if (!value) {
@@ -217,7 +214,6 @@ const formatLongDate = (value) => {
         }
     );
 };
-
 
 const formatShortDate = (value) => {
 
@@ -246,7 +242,6 @@ const formatShortDate = (value) => {
     );
 };
 
-
 // ==========================================================
 // FACULTY / SESSION HELPERS
 // ==========================================================
@@ -262,7 +257,6 @@ const getFacultyName = (timetable) => {
     );
 };
 
-
 const getFacultyCode = (timetable) => {
 
     return safeString(
@@ -272,7 +266,6 @@ const getFacultyCode = (timetable) => {
         ''
     );
 };
-
 
 const getSessionName = (timetable) => {
 
@@ -285,7 +278,6 @@ const getSessionName = (timetable) => {
     );
 };
 
-
 const getSemester = (timetable) => {
 
     return safeString(
@@ -294,7 +286,6 @@ const getSemester = (timetable) => {
         ''
     );
 };
-
 
 const getVersion = (timetable) => {
 
@@ -305,7 +296,6 @@ const getVersion = (timetable) => {
     );
 };
 
-
 const getStatus = (timetable) => {
 
     return safeString(
@@ -313,7 +303,6 @@ const getStatus = (timetable) => {
         'draft'
     ).toLowerCase();
 };
-
 
 // ==========================================================
 // HEADER TEXT
@@ -340,7 +329,6 @@ const getAcademicSessionText = (timetable) => {
 
     return 'ACADEMIC SESSION';
 };
-
 
 const getVersionText = (timetable) => {
 
@@ -370,7 +358,6 @@ const getVersionText = (timetable) => {
     return `Version ${version}`;
 };
 
-
 const getStatusText = (timetable) => {
 
     const status =
@@ -386,7 +373,6 @@ const getStatusText = (timetable) => {
 
     return `DRAFT / VERSION ${getVersion(timetable)}`;
 };
-
 
 // ==========================================================
 // PERIODS
@@ -411,7 +397,6 @@ const PERIODS = {
 
 };
 
-
 // ==========================================================
 // PERIOD DETECTION
 // ==========================================================
@@ -426,7 +411,6 @@ const getPeriod = (entry) => {
             entry.slot ||
             ''
         ).toLowerCase();
-
 
     // Explicit period names have priority.
 
@@ -448,7 +432,6 @@ const getPeriod = (entry) => {
         return 'evening';
     }
 
-
     // Look for explicit clock times.
 
     if (
@@ -463,7 +446,6 @@ const getPeriod = (entry) => {
     ) {
         return 'morning';
     }
-
 
     if (
         label.includes('11:00') ||
@@ -480,7 +462,6 @@ const getPeriod = (entry) => {
         return 'afternoon';
     }
 
-
     if (
         label.includes('3:00') ||
         label.includes('03:00') ||
@@ -496,7 +477,6 @@ const getPeriod = (entry) => {
         return 'evening';
     }
 
-
     // Fallback to start_time.
 
     const start =
@@ -505,7 +485,6 @@ const getPeriod = (entry) => {
             entry.startTime ||
             ''
         );
-
 
     if (start) {
 
@@ -548,12 +527,10 @@ const getPeriod = (entry) => {
         }
     }
 
-
     // Safe default.
 
     return 'morning';
 };
-
 
 // ==========================================================
 // VENUE
@@ -584,7 +561,6 @@ const getVenues = (entry) => {
 
     return [];
 };
-
 
 const getVenueText = (entry) => {
 
@@ -634,7 +610,6 @@ const getVenueText = (entry) => {
         : 'Not assigned';
 };
 
-
 // ==========================================================
 // INVIGILATORS
 // ==========================================================
@@ -656,7 +631,6 @@ const getInvigilators = (entry) => {
 
     return [];
 };
-
 
 const getInvigilatorText = (entry) => {
 
@@ -696,7 +670,6 @@ const getInvigilatorText = (entry) => {
         })
         .join(', ');
 };
-
 
 // ==========================================================
 // COURSE
@@ -738,7 +711,6 @@ const getCourseShortText = (entry) => {
         entry.candidates ??
         null;
 
-
     const lines = [];
 
     if (
@@ -754,11 +726,9 @@ const getCourseShortText = (entry) => {
         lines.push(title);
     }
 
-
     if (department) {
         lines.push(department);
     }
-
 
     if (level) {
 
@@ -785,14 +755,13 @@ const getCourseShortText = (entry) => {
         lines.push(
             `Candidates: ${candidates}`
         );
-    }
 
+    }
 
     return lines.length
         ? lines.join('\n')
         : 'Not assigned';
 };
-
 
 // ==========================================================
 // DATE GROUPING
@@ -802,7 +771,6 @@ const groupEntriesByDate = (entries) => {
 
     const groups =
         new Map();
-
 
     for (const entry of entries) {
 
@@ -816,11 +784,9 @@ const groupEntriesByDate = (entries) => {
             entry.date ||
             '';
 
-
         const dateKey =
             safeString(dateValue)
                 .slice(0, 10);
-
 
         if (!groups.has(dateKey)) {
 
@@ -835,18 +801,14 @@ const groupEntriesByDate = (entries) => {
             );
         }
 
-
         const group =
             groups.get(dateKey);
-
 
         const period =
             getPeriod(entry);
 
-
         group[period].push(entry);
     }
-
 
     return Array
         .from(groups.values())
@@ -856,7 +818,6 @@ const groupEntriesByDate = (entries) => {
                 getDateObject(b.date)
         );
 };
-
 
 // ==========================================================
 // FOOTER INFORMATION
@@ -885,7 +846,6 @@ const getFooterValue = (
     return fallback;
 };
 
-
 const getChiefExaminer = (timetable) => {
 
     return getFooterValue(
@@ -898,7 +858,6 @@ const getChiefExaminer = (timetable) => {
     );
 };
 
-
 const getFacultyExamOfficer = (timetable) => {
 
     return getFooterValue(
@@ -910,7 +869,6 @@ const getFacultyExamOfficer = (timetable) => {
         ]
     );
 };
-
 
 const getStudentNote = (timetable) => {
 
@@ -925,7 +883,6 @@ const getStudentNote = (timetable) => {
         'All students are expected to be at their venue at least 30 minutes before the commencement of examinations.'
     );
 };
-
 
 // ==========================================================
 // EXCEL BORDER
@@ -964,7 +921,6 @@ const excelBorder = () => {
     };
 };
 
-
 // ==========================================================
 // EXCEL EXPORT
 // ==========================================================
@@ -982,10 +938,8 @@ const generateTimetableExcel = async (
         );
     }
 
-
     const timetable =
         timetableData.timetable;
-
 
     const entries =
         Array.isArray(
@@ -994,10 +948,8 @@ const generateTimetableExcel = async (
             ? timetableData.entries
             : [];
 
-
     const workbook =
         new ExcelJS.Workbook();
-
 
     workbook.creator =
         'Federal University Dutse Examination Timetable System';
@@ -1008,12 +960,10 @@ const generateTimetableExcel = async (
     workbook.modified =
         new Date();
 
-
     const worksheet =
         workbook.addWorksheet(
             'Examination Timetable'
         );
-
 
     // ======================================================
     // COLUMN WIDTHS
@@ -1034,6 +984,10 @@ const generateTimetableExcel = async (
         },
 
         {
+            width: 25
+        },
+
+        {
             width: 37
         },
 
@@ -1042,7 +996,15 @@ const generateTimetableExcel = async (
         },
 
         {
+            width: 25
+        },
+
+        {
             width: 37
+        },
+
+        {
+            width: 25
         },
 
         {
@@ -1051,57 +1013,56 @@ const generateTimetableExcel = async (
 
     ];
 
-
     // ======================================================
     // LOGO
     // ======================================================
 
     const logo = getValidLogo();
 
-if (logo && logo.buffer) {
+    if (logo && logo.buffer) {
 
-    try {
+        try {
 
-        const imageId =
-            workbook.addImage({
-                buffer: logo.buffer,
-                extension: logo.extension
-            });
+            const imageId =
+                workbook.addImage({
+                    buffer: logo.buffer,
+                    extension: logo.extension
+                });
 
-        worksheet.addImage(
-            imageId,
-            {
-                tl: {
-                    col: 3.05,
-                    row: 0.05
-                },
-                ext: {
-                    width: 70,
-                    height: 70
+            worksheet.addImage(
+                imageId,
+                {
+                    tl: {
+                        col: 3.05,
+                        row: 0.05
+                    },
+
+                    ext: {
+                        width: 70,
+                        height: 70
+                    }
                 }
-            }
-        );
+            );
 
-        console.log(
-            'FUD logo inserted into Excel successfully.'
-        );
+            console.log(
+                'FUD logo inserted into Excel successfully.'
+            );
 
-    } catch (error) {
+        } catch (error) {
 
-        console.error(
-            'Excel FUD logo insertion failed:',
-            error.message
-        );
+            console.error(
+                'Excel FUD logo insertion failed:',
+                error.message
+            );
+        }
     }
-}
-
 
     // ======================================================
     // HEADER
     // ======================================================
 
     worksheet.mergeCells(
-        'A1:G1'
+        'A1:J1'
     );
 
     worksheet.getCell(
@@ -1126,9 +1087,8 @@ if (logo && logo.buffer) {
     worksheet.getRow(1).height =
         30;
 
-
     worksheet.mergeCells(
-        'A2:G2'
+        'A2:J2'
     );
 
     worksheet.getCell(
@@ -1153,9 +1113,8 @@ if (logo && logo.buffer) {
     worksheet.getRow(2).height =
         24;
 
-
     worksheet.mergeCells(
-        'A3:G3'
+        'A3:J3'
     );
 
     worksheet.getCell(
@@ -1180,9 +1139,8 @@ if (logo && logo.buffer) {
     worksheet.getRow(3).height =
         25;
 
-
     worksheet.mergeCells(
-        'A4:G4'
+        'A4:J4'
     );
 
     worksheet.getCell(
@@ -1209,13 +1167,12 @@ if (logo && logo.buffer) {
     worksheet.getRow(4).height =
         22;
 
-
     // ======================================================
     // VERSION + STATUS
     // ======================================================
 
     worksheet.mergeCells(
-        'A5:E5'
+        'A5:G5'
     );
 
     worksheet.getCell(
@@ -1242,20 +1199,19 @@ if (logo && logo.buffer) {
         vertical: 'middle'
     };
 
-
     worksheet.mergeCells(
-        'F5:G5'
+        'H5:J5'
     );
 
     worksheet.getCell(
-        'F5'
+        'H5'
     ).value =
         getStatusText(
             timetable
         );
 
     worksheet.getCell(
-        'F5'
+        'H5'
     ).font = {
         bold: true,
         size: 10,
@@ -1265,65 +1221,57 @@ if (logo && logo.buffer) {
     };
 
     worksheet.getCell(
-        'F5'
+        'H5'
     ).alignment = {
         horizontal: 'right',
         vertical: 'middle'
     };
 
-
     worksheet.getRow(5).height =
         22;
-
 
     // ======================================================
     // PERIOD HEADER
     // ======================================================
 
     worksheet.mergeCells(
-        'B7:C7'
+        'B7:D7'
     );
 
     worksheet.mergeCells(
-        'D7:E7'
+        'E7:G7'
     );
 
     worksheet.mergeCells(
-        'F7:G7'
+        'H7:J7'
     );
-
 
     worksheet.getCell(
         'A7'
     ).value =
         'DAYS';
 
-
     worksheet.getCell(
         'B7'
     ).value =
         `MORNING\n${PERIODS.morning.time}`;
 
-
     worksheet.getCell(
-        'D7'
+        'E7'
     ).value =
         `AFTERNOON\n${PERIODS.afternoon.time}`;
 
-
     worksheet.getCell(
-        'F7'
+        'H7'
     ).value =
         `EVENING\n${PERIODS.evening.time}`;
-
 
     const periodHeaderCells = [
         'A7',
         'B7',
-        'D7',
-        'F7'
+        'E7',
+        'H7'
     ];
-
 
     periodHeaderCells.forEach(
         (cellAddress) => {
@@ -1333,7 +1281,6 @@ if (logo && logo.buffer) {
                     cellAddress
                 );
 
-
             cell.font = {
                 bold: true,
                 size: 10,
@@ -1341,7 +1288,6 @@ if (logo && logo.buffer) {
                     argb: WHITE
                 }
             };
-
 
             cell.fill = {
                 type: 'pattern',
@@ -1351,23 +1297,19 @@ if (logo && logo.buffer) {
                 }
             };
 
-
             cell.alignment = {
                 horizontal: 'center',
                 vertical: 'middle',
                 wrapText: true
             };
 
-
             cell.border =
                 excelBorder();
         }
     );
 
-
     worksheet.getRow(7).height =
         34;
-
 
     // Apply green to merged cells.
 
@@ -1377,7 +1319,10 @@ if (logo && logo.buffer) {
         'D7',
         'E7',
         'F7',
-        'G7'
+        'G7',
+        'H7',
+        'I7',
+        'J7'
     ].forEach(
         (address) => {
 
@@ -1398,7 +1343,6 @@ if (logo && logo.buffer) {
         }
     );
 
-
     // ======================================================
     // SECOND HEADER
     // ======================================================
@@ -1406,21 +1350,21 @@ if (logo && logo.buffer) {
     const headerRow =
         worksheet.getRow(8);
 
-
     headerRow.values = [
         'DAYS',
         'COURSE',
         'VENUE',
+        'INVIGILATOR',
         'COURSE',
         'VENUE',
+        'INVIGILATOR',
         'COURSE',
-        'VENUE'
+        'VENUE',
+        'INVIGILATOR'
     ];
-
 
     headerRow.height =
         24;
-
 
     headerRow.eachCell(
         (cell) => {
@@ -1433,7 +1377,6 @@ if (logo && logo.buffer) {
                 }
             };
 
-
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
@@ -1442,19 +1385,16 @@ if (logo && logo.buffer) {
                 }
             };
 
-
             cell.alignment = {
                 horizontal: 'center',
                 vertical: 'middle',
                 wrapText: true
             };
 
-
             cell.border =
                 excelBorder();
         }
     );
-
 
     // ======================================================
     // DATA
@@ -1465,10 +1405,8 @@ if (logo && logo.buffer) {
             entries
         );
 
-
     let rowNumber =
         9;
-
 
     for (
         const group of grouped
@@ -1481,7 +1419,6 @@ if (logo && logo.buffer) {
                 group.evening.length,
                 1
             );
-
 
         for (
             let index = 0;
@@ -1498,12 +1435,10 @@ if (logo && logo.buffer) {
             const evening =
                 group.evening[index];
 
-
             const row =
                 worksheet.getRow(
                     rowNumber
                 );
-
 
             row.values = [
 
@@ -1525,6 +1460,12 @@ if (logo && logo.buffer) {
                     )
                     : '',
 
+                morning
+                    ? getInvigilatorText(
+                        morning
+                    )
+                    : '',
+
                 afternoon
                     ? getCourseShortText(
                         afternoon
@@ -1533,6 +1474,12 @@ if (logo && logo.buffer) {
 
                 afternoon
                     ? getVenueText(
+                        afternoon
+                    )
+                    : '',
+
+                afternoon
+                    ? getInvigilatorText(
                         afternoon
                     )
                     : '',
@@ -1545,18 +1492,22 @@ if (logo && logo.buffer) {
 
                 evening
                     ? getVenueText(
+                        evening
+                    )
+                    : '',
+
+                evening
+                    ? getInvigilatorText(
                         evening
                     )
                     : ''
 
             ];
 
-
             row.height =
                 maxEntries > 1
                     ? 55
                     : 50;
-
 
             row.eachCell(
                 (
@@ -1578,10 +1529,8 @@ if (logo && logo.buffer) {
                             true
                     };
 
-
                     cell.border =
                         excelBorder();
-
 
                     cell.font = {
                         name: 'Arial',
@@ -1590,7 +1539,6 @@ if (logo && logo.buffer) {
                                 ? 10
                                 : 9
                     };
-
 
                     if (
                         columnNumber === 1
@@ -1601,7 +1549,6 @@ if (logo && logo.buffer) {
                             bold: true,
                             size: 10
                         };
-
 
                         cell.fill = {
                             type: 'pattern',
@@ -1615,11 +1562,9 @@ if (logo && logo.buffer) {
                 }
             );
 
-
             rowNumber++;
         }
     }
-
 
     // ======================================================
     // NOTE
@@ -1627,17 +1572,14 @@ if (logo && logo.buffer) {
 
     rowNumber += 1;
 
-
     worksheet.mergeCells(
-        `A${rowNumber}:G${rowNumber}`
+        `A${rowNumber}:J${rowNumber}`
     );
-
 
     worksheet.getCell(
         `A${rowNumber}`
     ).value =
         `NOTE: ${getStudentNote(timetable)}`;
-
 
     worksheet.getCell(
         `A${rowNumber}`
@@ -1645,7 +1587,6 @@ if (logo && logo.buffer) {
         bold: true,
         size: 9
     };
-
 
     worksheet.getCell(
         `A${rowNumber}`
@@ -1655,11 +1596,9 @@ if (logo && logo.buffer) {
         wrapText: true
     };
 
-
     worksheet.getRow(
         rowNumber
     ).height = 32;
-
 
     // ======================================================
     // FOOTER BRAND
@@ -1667,17 +1606,14 @@ if (logo && logo.buffer) {
 
     rowNumber += 2;
 
-
     worksheet.mergeCells(
-        `A${rowNumber}:G${rowNumber}`
+        `A${rowNumber}:J${rowNumber}`
     );
-
 
     worksheet.getCell(
         `A${rowNumber}`
     ).value =
         'Federal University Dutse Examination Timetable System';
-
 
     worksheet.getCell(
         `A${rowNumber}`
@@ -1689,14 +1625,12 @@ if (logo && logo.buffer) {
         }
     };
 
-
     worksheet.getCell(
         `A${rowNumber}`
     ).alignment = {
         horizontal: 'center',
         vertical: 'middle'
     };
-
 
     // ======================================================
     // EXCEL PAGE SETTINGS
@@ -1708,7 +1642,6 @@ if (logo && logo.buffer) {
             ySplit: 8
         }
     ];
-
 
     worksheet.pageSetup = {
 
@@ -1734,9 +1667,8 @@ if (logo && logo.buffer) {
             300,
 
         printArea:
-            `A1:G${rowNumber}`
+            `A1:J${rowNumber}`
     };
-
 
     worksheet.pageMargins = {
 
@@ -1748,20 +1680,16 @@ if (logo && logo.buffer) {
         footer: 0.1
     };
 
-
     worksheet.printOptions = {
         horizontalCentered: true,
         verticalCentered: false
     };
 
-
     worksheet.headerFooter.oddFooter =
         '&C Federal University Dutse Examination Timetable System';
 
-
     return workbook.xlsx.writeBuffer();
 };
-
 
 // ==========================================================
 // PDF TEXT HELPER
@@ -1787,7 +1715,6 @@ const pdfText = (
     );
 };
 
-
 // ==========================================================
 // PDF HEADER
 // ==========================================================
@@ -1801,10 +1728,8 @@ const drawPdfHeader = (
     const pageWidth =
         841.89;
 
-
     const headerCenter =
         pageWidth / 2;
-
 
     // ------------------------------------------------------
     // LOGO
@@ -1837,7 +1762,6 @@ const drawPdfHeader = (
         }
     }
 
-
     // ------------------------------------------------------
     // UNIVERSITY
     // ------------------------------------------------------
@@ -1851,7 +1775,6 @@ const drawPdfHeader = (
             `#${BLACK}`
         );
 
-
     pdfText(
         doc,
         'FEDERAL UNIVERSITY DUTSE',
@@ -1863,14 +1786,12 @@ const drawPdfHeader = (
         }
     );
 
-
     // ------------------------------------------------------
     // FACULTY
     // ------------------------------------------------------
 
     doc
         .fontSize(14);
-
 
     pdfText(
         doc,
@@ -1883,14 +1804,12 @@ const drawPdfHeader = (
         }
     );
 
-
     // ------------------------------------------------------
     // TITLE
     // ------------------------------------------------------
 
     doc
         .fontSize(15);
-
 
     pdfText(
         doc,
@@ -1903,14 +1822,12 @@ const drawPdfHeader = (
         }
     );
 
-
     // ------------------------------------------------------
     // SESSION
     // ------------------------------------------------------
 
     doc
         .fontSize(11);
-
 
     pdfText(
         doc,
@@ -1925,7 +1842,6 @@ const drawPdfHeader = (
         }
     );
 
-
     // ------------------------------------------------------
     // VERSION
     // ------------------------------------------------------
@@ -1935,7 +1851,6 @@ const drawPdfHeader = (
         .fillColor(
             `#${FUD_ORANGE}`
         );
-
 
     pdfText(
         doc,
@@ -1949,7 +1864,6 @@ const drawPdfHeader = (
             align: 'center'
         }
     );
-
 
     // ------------------------------------------------------
     // STATUS
@@ -1968,12 +1882,10 @@ const drawPdfHeader = (
         }
     );
 
-
     doc.fillColor(
         `#${BLACK}`
     );
 };
-
 
 // ==========================================================
 // PDF TABLE HEADER
@@ -1989,7 +1901,6 @@ const drawPdfTableHeader = (
     let y =
         startY;
 
-
     const tableWidth =
         columns.reduce(
             (
@@ -2001,14 +1912,12 @@ const drawPdfTableHeader = (
             0
         );
 
-
     // ------------------------------------------------------
     // GREEN PERIOD HEADER
     // ------------------------------------------------------
 
     const periodHeight =
         38;
-
 
     doc
         .rect(
@@ -2020,7 +1929,6 @@ const drawPdfTableHeader = (
         .fill(
             `#${PERIOD_GREEN}`
         );
-
 
     const periods = [
 
@@ -2034,25 +1942,24 @@ const drawPdfTableHeader = (
             label:
                 `MORNING\n${PERIODS.morning.time}`,
             start: 1,
-            span: 2
+            span: 3
         },
 
         {
             label:
                 `AFTERNOON\n${PERIODS.afternoon.time}`,
-            start: 3,
-            span: 2
+            start: 4,
+            span: 3
         },
 
         {
             label:
                 `EVENING\n${PERIODS.evening.time}`,
-            start: 5,
-            span: 2
+            start: 7,
+            span: 3
         }
 
     ];
-
 
     periods.forEach(
         (period) => {
@@ -2074,7 +1981,6 @@ const drawPdfTableHeader = (
                         0
                     );
 
-
             const x =
                 startX +
                 columns
@@ -2092,7 +1998,6 @@ const drawPdfTableHeader = (
                         0
                     );
 
-
             doc
                 .font(
                     'Helvetica-Bold'
@@ -2101,7 +2006,6 @@ const drawPdfTableHeader = (
                 .fillColor(
                     `#${WHITE}`
                 );
-
 
             pdfText(
                 doc,
@@ -2117,9 +2021,7 @@ const drawPdfTableHeader = (
         }
     );
 
-
     y += periodHeight;
-
 
     // ------------------------------------------------------
     // ORANGE SECOND HEADER
@@ -2127,7 +2029,6 @@ const drawPdfTableHeader = (
 
     const secondHeaderHeight =
         24;
-
 
     doc
         .rect(
@@ -2140,23 +2041,23 @@ const drawPdfTableHeader = (
             `#${FUD_ORANGE}`
         );
 
-
     const labels = [
 
         'DAYS',
         'COURSE',
         'VENUE',
+        'INVIGILATOR',
         'COURSE',
         'VENUE',
+        'INVIGILATOR',
         'COURSE',
-        'VENUE'
+        'VENUE',
+        'INVIGILATOR'
 
     ];
 
-
     let x =
         startX;
-
 
     labels.forEach(
         (
@@ -2167,7 +2068,6 @@ const drawPdfTableHeader = (
             const width =
                 columns[index].width;
 
-
             doc
                 .font(
                     'Helvetica-Bold'
@@ -2176,7 +2076,6 @@ const drawPdfTableHeader = (
                 .fillColor(
                     `#${WHITE}`
                 );
-
 
             pdfText(
                 doc,
@@ -2189,18 +2088,15 @@ const drawPdfTableHeader = (
                 }
             );
 
-
             x += width;
         }
     );
-
 
     return (
         y +
         secondHeaderHeight
     );
 };
-
 
 // ==========================================================
 // PDF ROW HEIGHT CALCULATION
@@ -2214,7 +2110,6 @@ const estimatePdfRowHeight = (
     let maxLines =
         1;
 
-
     values.forEach(
         (
             value,
@@ -2224,16 +2119,13 @@ const estimatePdfRowHeight = (
             const text =
                 safeString(value);
 
-
             if (!text) {
                 return;
             }
 
-
             const width =
                 columns[index].width -
                 10;
-
 
             // Approximate number of characters
             // that can fit on one line.
@@ -2245,7 +2137,6 @@ const estimatePdfRowHeight = (
                         width / 4.6
                     )
                 );
-
 
             const lines =
                 text
@@ -2266,7 +2157,6 @@ const estimatePdfRowHeight = (
                         0
                     );
 
-
             maxLines =
                 Math.max(
                     maxLines,
@@ -2274,7 +2164,6 @@ const estimatePdfRowHeight = (
                 );
         }
     );
-
 
     return Math.min(
         82,
@@ -2284,7 +2173,6 @@ const estimatePdfRowHeight = (
         )
     );
 };
-
 
 // ==========================================================
 // PDF ROW
@@ -2302,7 +2190,6 @@ const drawPdfRow = (
     let x =
         startX;
 
-
     values.forEach(
         (
             value,
@@ -2311,7 +2198,6 @@ const drawPdfRow = (
 
             const width =
                 columns[index].width;
-
 
             doc
                 .rect(
@@ -2327,7 +2213,6 @@ const drawPdfRow = (
                     `#${BORDER_COLOR}`
                 );
 
-
             doc
                 .font(
                     index === 0
@@ -2342,7 +2227,6 @@ const drawPdfRow = (
                 .fillColor(
                     `#${BLACK}`
                 );
-
 
             pdfText(
                 doc,
@@ -2360,12 +2244,10 @@ const drawPdfRow = (
                 }
             );
 
-
             x += width;
         }
     );
 };
-
 
 // ==========================================================
 // PDF FOOTER
@@ -2383,7 +2265,6 @@ const drawPdfPageFooter = (
     const pageHeight =
         595.28;
 
-
     doc
         .font(
             'Helvetica'
@@ -2392,7 +2273,6 @@ const drawPdfPageFooter = (
         .fillColor(
             `#${FUD_GREEN}`
         );
-
 
     pdfText(
         doc,
@@ -2405,12 +2285,10 @@ const drawPdfPageFooter = (
         }
     );
 
-
     doc
         .fillColor(
             `#${FUD_ORANGE}`
         );
-
 
     pdfText(
         doc,
@@ -2423,7 +2301,6 @@ const drawPdfPageFooter = (
         }
     );
 };
-
 
 // ==========================================================
 // PDF EXPORT
@@ -2442,10 +2319,8 @@ const generateTimetablePDF = async (
         );
     }
 
-
     const timetable =
         timetableData.timetable;
-
 
     const entries =
         Array.isArray(
@@ -2454,10 +2329,8 @@ const generateTimetablePDF = async (
             ? timetableData.entries
             : [];
 
-
     const logo =
         getValidLogo();
-
 
     return new Promise(
         (
@@ -2486,9 +2359,7 @@ const generateTimetablePDF = async (
                             true
                     });
 
-
                 const chunks = [];
-
 
                 doc.on(
                     'data',
@@ -2497,12 +2368,10 @@ const generateTimetablePDF = async (
                     }
                 );
 
-
                 doc.on(
                     'error',
                     reject
                 );
-
 
                 doc.on(
                     'end',
@@ -2516,18 +2385,14 @@ const generateTimetablePDF = async (
                     }
                 );
 
-
                 const pageWidth =
                     841.89;
-
 
                 const pageHeight =
                     595.28;
 
-
                 const startX =
                     28;
-
 
                 // A4 landscape width minus
                 // left/right margins.
@@ -2536,71 +2401,75 @@ const generateTimetablePDF = async (
                     pageWidth -
                     56;
 
-
                 // ==================================================
-                // EXACT 7-COLUMN STRUCTURE
+                // EXACT 10-COLUMN STRUCTURE
                 // ==================================================
                 //
                 // DAYS
                 // MORNING COURSE
                 // MORNING VENUE
+                // MORNING INVIGILATOR
                 // AFTERNOON COURSE
                 // AFTERNOON VENUE
+                // AFTERNOON INVIGILATOR
                 // EVENING COURSE
                 // EVENING VENUE
+                // EVENING INVIGILATOR
                 //
                 // ==================================================
 
-                const columns = [
+               const columns = [
+    {
+        key: 'day',
+        width: 58
+    },
 
-                    {
-                        key: 'days',
-                        width: 88
-                    },
+    {
+        key: 'morningCourse',
+        width: 86
+    },
 
-                    {
-                        key: 'morningCourse',
-                        width: 145
-                    },
+    {
+        key: 'morningVenue',
+        width: 68
+    },
 
-                    {
-                        key: 'morningVenue',
-                        width: 95
-                    },
+    {
+        key: 'morningInvigilator',
+        width: 80
+    },
 
-                    {
-                        key: 'afternoonCourse',
-                        width: 145
-                    },
+    {
+        key: 'afternoonCourse',
+        width: 86
+    },
 
-                    {
-                        key: 'afternoonVenue',
-                        width: 95
-                    },
+    {
+        key: 'afternoonVenue',
+        width: 68
+    },
 
-                    {
-                        key: 'eveningCourse',
-                        width: 145
-                    },
+    {
+        key: 'afternoonInvigilator',
+        width: 80
+    },
 
-                    {
-                        key: 'eveningVenue',
-                        width:
-                            tableWidth -
-                            (
-                                88 +
-                                145 +
-                                95 +
-                                145 +
-                                95 +
-                                145
-                            )
-                    }
+    {
+        key: 'eveningCourse',
+        width: 86
+    },
 
-                ];
+    {
+        key: 'eveningVenue',
+        width: 68
+    },
 
-
-                // Ensure the seven columns exactly
+    {
+        key: 'eveningInvigilator',
+        width: 80
+    }
+];
+                // Ensure the ten columns exactly
                 // fill the available page width.
 
                 const actualTableWidth =
@@ -2613,7 +2482,6 @@ const generateTimetablePDF = async (
                             column.width,
                         0
                     );
-
 
                 if (
                     Math.abs(
@@ -2629,7 +2497,6 @@ const generateTimetablePDF = async (
                         actualTableWidth;
                 }
 
-
                 // ==================================================
                 // HEADER
                 // ==================================================
@@ -2640,7 +2507,6 @@ const generateTimetablePDF = async (
                     logo
                 );
 
-
                 // ==================================================
                 // TABLE
                 // ==================================================
@@ -2650,10 +2516,8 @@ const generateTimetablePDF = async (
                         entries
                     );
 
-
                 let y =
                     193;
-
 
                 y =
                     drawPdfTableHeader(
@@ -2662,7 +2526,6 @@ const generateTimetablePDF = async (
                         y,
                         columns
                     );
-
 
                 // ==================================================
                 // DATA ROWS
@@ -2680,7 +2543,6 @@ const generateTimetablePDF = async (
                             1
                         );
 
-
                     for (
                         let index = 0;
                         index < maxEntries;
@@ -2690,14 +2552,11 @@ const generateTimetablePDF = async (
                         const morning =
                             group.morning[index];
 
-
                         const afternoon =
                             group.afternoon[index];
 
-
                         const evening =
                             group.evening[index];
-
 
                         const values = [
 
@@ -2719,6 +2578,12 @@ const generateTimetablePDF = async (
                                 )
                                 : '',
 
+                            morning
+                                ? getInvigilatorText(
+                                    morning
+                                )
+                                : '',
+
                             afternoon
                                 ? getCourseShortText(
                                     afternoon
@@ -2727,6 +2592,12 @@ const generateTimetablePDF = async (
 
                             afternoon
                                 ? getVenueText(
+                                    afternoon
+                                )
+                                : '',
+
+                            afternoon
+                                ? getInvigilatorText(
                                     afternoon
                                 )
                                 : '',
@@ -2739,12 +2610,17 @@ const generateTimetablePDF = async (
 
                             evening
                                 ? getVenueText(
+                                    evening
+                                )
+                                : '',
+
+                            evening
+                                ? getInvigilatorText(
                                     evening
                                 )
                                 : ''
 
                         ];
-
 
                         const rowHeight =
                             estimatePdfRowHeight(
@@ -2752,13 +2628,11 @@ const generateTimetablePDF = async (
                                 columns
                             );
 
-
                         // Printable table/footer boundary.
 
                         const bottomLimit =
                             pageHeight -
                             48;
-
 
                         if (
                             y +
@@ -2781,7 +2655,6 @@ const generateTimetablePDF = async (
                                 }
                             });
 
-
                             // On continuation pages,
                             // repeat the university header
                             // and table header.
@@ -2792,10 +2665,8 @@ const generateTimetablePDF = async (
                                 logo
                             );
 
-
                             y =
                                 193;
-
 
                             y =
                                 drawPdfTableHeader(
@@ -2806,7 +2677,6 @@ const generateTimetablePDF = async (
                                 );
                         }
 
-
                         drawPdfRow(
                             doc,
                             startX,
@@ -2816,12 +2686,10 @@ const generateTimetablePDF = async (
                             rowHeight
                         );
 
-
                         y +=
                             rowHeight;
                     }
                 }
-
 
                 // ==================================================
                 // NOTE
@@ -2829,7 +2697,6 @@ const generateTimetablePDF = async (
 
                 const noteHeight =
                     28;
-
 
                 if (
                     y +
@@ -2852,17 +2719,14 @@ const generateTimetablePDF = async (
                         }
                     });
 
-
                     drawPdfHeader(
                         doc,
                         timetable,
                         logo
                     );
 
-
                     y =
                         193;
-
 
                     y =
                         drawPdfTableHeader(
@@ -2873,9 +2737,7 @@ const generateTimetablePDF = async (
                         );
                 }
 
-
                 y += 10;
-
 
                 doc
                     .font(
@@ -2885,7 +2747,6 @@ const generateTimetablePDF = async (
                     .fillColor(
                         `#${BLACK}`
                     );
-
 
                 pdfText(
                     doc,
@@ -2899,7 +2760,6 @@ const generateTimetablePDF = async (
                     }
                 );
 
-
                 // ==================================================
                 // OPTIONAL OFFICER INFORMATION
                 // ==================================================
@@ -2907,12 +2767,10 @@ const generateTimetablePDF = async (
                 let footerInfoY =
                     y + 18;
 
-
                 const chiefExaminer =
                     getChiefExaminer(
                         timetable
                     );
-
 
                 if (
                     chiefExaminer &&
@@ -2929,7 +2787,6 @@ const generateTimetablePDF = async (
                             `#${BLACK}`
                         );
 
-
                     pdfText(
                         doc,
                         `Chief Examiner: ${chiefExaminer}`,
@@ -2941,17 +2798,14 @@ const generateTimetablePDF = async (
                         }
                     );
 
-
                     footerInfoY +=
                         13;
                 }
-
 
                 const facultyExamOfficer =
                     getFacultyExamOfficer(
                         timetable
                     );
-
 
                 if (
                     facultyExamOfficer &&
@@ -2965,7 +2819,6 @@ const generateTimetablePDF = async (
                         )
                         .fontSize(7.5);
 
-
                     pdfText(
                         doc,
                         `Faculty Exam Officer: ${facultyExamOfficer}`,
@@ -2978,7 +2831,6 @@ const generateTimetablePDF = async (
                     );
                 }
 
-
                 // ==================================================
                 // PAGE FOOTERS
                 // ==================================================
@@ -2986,10 +2838,8 @@ const generateTimetablePDF = async (
                 const range =
                     doc.bufferedPageRange();
 
-
                 const pageCount =
                     range.count;
-
 
                 for (
                     let page =
@@ -2997,7 +2847,7 @@ const generateTimetablePDF = async (
 
                     page <
                     range.start +
-                        range.count;
+                    range.count;
 
                     page++
                 ) {
@@ -3006,14 +2856,12 @@ const generateTimetablePDF = async (
                         page
                     );
 
-
                     drawPdfPageFooter(
                         doc,
                         page + 1,
                         pageCount
                     );
                 }
-
 
                 // ==================================================
                 // COMPLETE PDF
@@ -3028,7 +2876,6 @@ const generateTimetablePDF = async (
         }
     );
 };
-
 
 // ==========================================================
 // EXPORTS
