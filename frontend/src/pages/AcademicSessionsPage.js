@@ -659,7 +659,7 @@ const AcademicSessionsPage = () => {
 
         const confirmed =
             window.confirm(
-                `Delete academic session "${session.session_name} — ${session.semester}"?\n\nThis action cannot be undone. If courses, registrations, or timetable records are linked to this session, the system will prevent deletion.`
+                `Delete academic session "${session.session_name} — ${session.semester}"?\n\nThis action cannot be undone. If courses or timetable records are linked to this session, the system will prevent deletion.`
             );
 
 

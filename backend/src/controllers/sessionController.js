@@ -803,49 +803,6 @@ const deleteSession = async (
 
 
         // --------------------------------------------------
-        // CHECK REGISTRATIONS THROUGH COURSES
-        // --------------------------------------------------
-
-        const [registrationRows] =
-            await connection.query(
-                `SELECT
-                    COUNT(*) AS total
-
-                 FROM registrations r
-
-                 INNER JOIN courses c
-                    ON r.course_id = c.id
-
-                 WHERE c.session_id = ?`,
-                [
-                    sessionId
-                ]
-            );
-
-
-        const registrationCount =
-            Number(
-                registrationRows[0].total
-            );
-
-
-        if (
-            registrationCount > 0
-        ) {
-
-            const error =
-                new Error(
-                    `Cannot delete this academic session because ${registrationCount} student registration(s) are linked to it.`
-                );
-
-            error.statusCode =
-                409;
-
-            throw error;
-        }
-
-
-        // --------------------------------------------------
         // DELETE SESSION
         // --------------------------------------------------
 

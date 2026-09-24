@@ -932,7 +932,7 @@ const CoursesPage = () => {
 
         const confirmed =
             window.confirm(
-                `Delete ${course.course_code} — ${course.course_title}?\n\nThis cannot be undone. A course already used in registrations or timetables cannot be deleted.`
+                `Delete ${course.course_code} — ${course.course_title}?\n\nThis cannot be undone. A course already used in timetables cannot be deleted.`
             );
 
 

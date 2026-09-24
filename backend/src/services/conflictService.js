@@ -39,7 +39,7 @@ const buildCourseConflictGraph = async (
     }
 
 
-    // Find pairs of courses sharing students
+    // Find pairs of courses sharing students / having examination conflicts
     const [conflicts] = await db.query(
         `SELECT
             c1.id AS course_a_id,
@@ -50,21 +50,44 @@ const buildCourseConflictGraph = async (
             c2.course_code AS course_b_code,
             c2.course_title AS course_b_title,
 
-            COUNT(
-                DISTINCT r1.student_id
-            ) AS shared_students
+            CASE
+                -- If courses are in the same combined group
+                WHEN c1.combined_group_id IS NOT NULL 
+                     AND c1.combined_group_id = c2.combined_group_id 
+                    THEN GREATEST(1, LEAST(c1.registered_students, c2.registered_students))
 
-         FROM student_course_registrations r1
+                -- If one or both are general studies at the same level
+                WHEN (c1.is_general_studies = 1 OR c2.is_general_studies = 1) 
+                     AND c1.level = c2.level
+                    THEN GREATEST(1, 
+                        CASE
+                            WHEN c1.is_general_studies = 1 AND c2.is_general_studies = 1
+                                THEN LEAST(c1.registered_students, c2.registered_students)
+                            WHEN c1.is_general_studies = 1
+                                THEN c2.registered_students
+                            ELSE c1.registered_students
+                        END
+                    )
 
-         INNER JOIN student_course_registrations r2
-            ON r1.student_id = r2.student_id
-            AND r1.course_id < r2.course_id
+                -- If same department and same level
+                WHEN c1.department_id = c2.department_id 
+                     AND c1.level = c2.level
+                    THEN GREATEST(1, 
+                        CASE 
+                            WHEN c1.regular_students > 0 AND c2.regular_students > 0 
+                                THEN LEAST(c1.regular_students, c2.regular_students)
+                            ELSE LEAST(c1.registered_students, c2.registered_students)
+                        END
+                    )
 
-         INNER JOIN courses c1
-            ON r1.course_id = c1.id
+                ELSE 0
+            END AS shared_students
+
+         FROM courses c1
 
          INNER JOIN courses c2
-            ON r2.course_id = c2.id
+            ON c1.id < c2.id
+            AND c1.session_id = c2.session_id
 
          INNER JOIN departments d1
             ON c1.department_id = d1.id
@@ -78,13 +101,14 @@ const buildCourseConflictGraph = async (
          AND d1.faculty_id = ?
          AND d2.faculty_id = ?
 
-         GROUP BY
-            c1.id,
-            c1.course_code,
-            c1.course_title,
-            c2.id,
-            c2.course_code,
-            c2.course_title
+         AND c1.is_active = TRUE
+         AND c2.is_active = TRUE
+
+         AND (
+             (c1.department_id = c2.department_id AND c1.level = c2.level)
+             OR (c1.combined_group_id IS NOT NULL AND c1.combined_group_id = c2.combined_group_id)
+             OR ((c1.is_general_studies = 1 OR c2.is_general_studies = 1) AND c1.level = c2.level)
+         )
 
          ORDER BY
             shared_students DESC,
