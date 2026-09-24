@@ -51,15 +51,13 @@ const buildCourseConflictGraph = async (
             c2.course_title AS course_b_title,
 
             CASE
-                -- If courses are in the same combined group
-                WHEN c1.combined_group_id IS NOT NULL 
-                     AND c1.combined_group_id = c2.combined_group_id 
+                WHEN c1.combined_group_id IS NOT NULL
+                     AND c1.combined_group_id = c2.combined_group_id
                     THEN GREATEST(1, LEAST(c1.registered_students, c2.registered_students))
 
-                -- If one or both are general studies at the same level
-                WHEN (c1.is_general_studies = 1 OR c2.is_general_studies = 1) 
+                WHEN (c1.is_general_studies = 1 OR c2.is_general_studies = 1)
                      AND c1.level = c2.level
-                    THEN GREATEST(1, 
+                    THEN GREATEST(1,
                         CASE
                             WHEN c1.is_general_studies = 1 AND c2.is_general_studies = 1
                                 THEN LEAST(c1.registered_students, c2.registered_students)
@@ -69,12 +67,11 @@ const buildCourseConflictGraph = async (
                         END
                     )
 
-                -- If same department and same level
-                WHEN c1.department_id = c2.department_id 
+                WHEN c1.department_id = c2.department_id
                      AND c1.level = c2.level
-                    THEN GREATEST(1, 
-                        CASE 
-                            WHEN c1.regular_students > 0 AND c2.regular_students > 0 
+                    THEN GREATEST(1,
+                        CASE
+                            WHEN c1.regular_students > 0 AND c2.regular_students > 0
                                 THEN LEAST(c1.regular_students, c2.regular_students)
                             ELSE LEAST(c1.registered_students, c2.registered_students)
                         END
@@ -111,7 +108,6 @@ const buildCourseConflictGraph = async (
          )
 
          ORDER BY
-            shared_students DESC,
             c1.course_code ASC,
             c2.course_code ASC`,
         [
