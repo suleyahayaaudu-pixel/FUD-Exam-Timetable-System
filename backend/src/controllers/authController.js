@@ -63,6 +63,16 @@ const login = async (req, res) => {
         }
 
         // Generate JWT
+        const configuredExpiry =
+            typeof process.env.JWT_EXPIRES_IN === 'string'
+                ? process.env.JWT_EXPIRES_IN.trim()
+                : '';
+
+        const safeJwtExpiresIn =
+            /^(\d+)(ms|s|m|h|d|w|y)?$/.test(configuredExpiry)
+                ? configuredExpiry
+                : '8h';
+
         const token = jwt.sign(
             {
                 id: user.id,
@@ -70,9 +80,9 @@ const login = async (req, res) => {
                 department_id: user.department_id,
                 role: user.role
             },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'local-dev-secret',
             {
-                expiresIn: process.env.JWT_EXPIRES_IN || '8h'
+                expiresIn: safeJwtExpiresIn
             }
         );
 

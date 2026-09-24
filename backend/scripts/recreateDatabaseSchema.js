@@ -1,5 +1,17 @@
 const db = require('../src/config/db');
 
+const defaultFaculties = [
+    ['Faculty of Computing', 'COMP'],
+    ['Faculty of Life Science', 'LIFE'],
+    ['Faculty of Physical Science', 'PHYS'],
+    ['Faculty of Art and Social Science', 'ARTS'],
+    ['Faculty of Management Science', 'MGT'],
+    ['Faculty of Agricultural Science', 'AGRI'],
+    ['Faculty of Education', 'EDU'],
+    ['Faculty of Basic Medical Science', 'BMS'],
+    ['Faculty of Clinical Science', 'CLIN']
+];
+
 const schemaSql = [
     `
     CREATE TABLE IF NOT EXISTS faculties (
@@ -100,6 +112,7 @@ const schemaSql = [
         combined_group_id INT NULL,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_courses_session_code (session_id, course_code),
         KEY idx_courses_department (department_id),
         KEY idx_courses_session (session_id),
@@ -144,6 +157,7 @@ const schemaSql = [
         is_combinable BOOLEAN NOT NULL DEFAULT FALSE,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_venues_faculty_code (faculty_id, venue_code),
         KEY idx_venues_faculty (faculty_id),
         CONSTRAINT fk_venues_faculty
@@ -193,6 +207,7 @@ const schemaSql = [
         max_duties_per_semester INT NOT NULL DEFAULT 0,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_invigilators_staff_id (staff_id),
         KEY idx_invigilators_department (department_id),
         CONSTRAINT fk_invigilators_department
@@ -290,11 +305,13 @@ const schemaSql = [
         id INT AUTO_INCREMENT PRIMARY KEY,
         timetable_id INT NOT NULL,
         token_hash CHAR(64) NOT NULL,
+        public_token VARCHAR(255) NOT NULL,
         created_by INT NOT NULL,
         expires_at DATETIME NULL,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uq_feedback_token_hash (token_hash),
+        UNIQUE KEY uq_feedback_public_token (public_token),
         KEY idx_feedback_link_timetable (timetable_id),
         KEY idx_feedback_link_active (is_active),
         CONSTRAINT fk_feedback_link_timetable
@@ -355,10 +372,20 @@ async function main() {
             await db.query(sql);
         }
 
+        if (defaultFaculties.length) {
+            const facultyInsertSql = `
+                INSERT IGNORE INTO faculties (name, short_code)
+                VALUES ?
+            `;
+
+            await db.query(facultyInsertSql, [defaultFaculties]);
+        }
+
         const [rows] = await db.query('SHOW TABLES');
         console.log('Database schema recreated successfully.');
         console.log('Tables created:', rows.length);
         console.log(rows.map(r => Object.values(r)[0]).sort().join(', '));
+        console.log('Seeded faculties:', defaultFaculties.length);
     } catch (error) {
         console.error('Schema rebuild failed:', error.message);
         process.exitCode = 1;
