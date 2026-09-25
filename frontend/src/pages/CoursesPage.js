@@ -59,6 +59,8 @@ const CoursesPage = () => {
 
             department_id: '',
 
+            department_ids: [],
+
             course_code: '',
 
             course_title: '',
@@ -95,6 +97,173 @@ const CoursesPage = () => {
             error.message ||
             fallback
         );
+    };
+
+
+    const getCourseDepartmentDisplay = (
+        course
+    ) => {
+
+        const parsedDepartmentIds =
+            Array.isArray(
+                course?.department_ids
+            )
+                ? course.department_ids
+                : typeof course?.department_ids === 'string'
+                    ? course.department_ids
+                        .split(',')
+                        .map(
+                            value =>
+                                value.trim()
+                        )
+                        .filter(
+                            Boolean
+                        )
+                    : course?.department_id
+                        ? [
+                            String(
+                                course.department_id
+                            )
+                        ]
+                        : [];
+
+        const parsedNames =
+            Array.isArray(
+                course?.department_names
+            )
+                ? course.department_names
+                : typeof course?.department_names === 'string'
+                    ? course.department_names
+                        .split(',')
+                        .map(
+                            value =>
+                                value.trim()
+                        )
+                        .filter(
+                            Boolean
+                        )
+                    : [];
+
+        const parsedCodes =
+            Array.isArray(
+                course?.department_codes
+            )
+                ? course.department_codes
+                : typeof course?.department_codes === 'string'
+                    ? course.department_codes
+                        .split(',')
+                        .map(
+                            value =>
+                                value.trim()
+                        )
+                        .filter(
+                            Boolean
+                        )
+                    : [];
+
+        if (
+            parsedNames.length > 0 ||
+            parsedCodes.length > 0
+        ) {
+
+            return {
+
+                names:
+                    parsedNames.length > 0
+                        ? parsedNames
+                        : [
+                            course?.department_name
+                        ].filter(
+                            Boolean
+                        ),
+
+                codes:
+                    parsedCodes.length > 0
+                        ? parsedCodes
+                        : [
+                            course?.department_code
+                        ].filter(
+                            Boolean
+                        )
+
+            };
+        }
+
+
+        if (
+            parsedDepartmentIds.length === 0
+        ) {
+
+            return {
+
+                names:
+                    course?.department_name
+                        ? [
+                            course.department_name
+                        ]
+                        : [],
+
+                codes:
+                    course?.department_code
+                        ? [
+                            course.department_code
+                        ]
+                        : []
+
+            };
+        }
+
+
+        const mappedDepartments =
+            parsedDepartmentIds.map(
+                departmentId => {
+
+                    const department =
+                        departments.find(
+                            item =>
+                                String(
+                                    item.id
+                                ) === String(
+                                    departmentId
+                                )
+                        );
+
+                    return {
+
+                        name:
+                            department?.name ||
+                            course?.department_name ||
+                            '',
+
+                        code:
+                            department?.short_code ||
+                            course?.department_code ||
+                            ''
+
+                    };
+                }
+            );
+
+
+        return {
+
+            names:
+                mappedDepartments.map(
+                    department =>
+                        department.name
+                ).filter(
+                    Boolean
+                ),
+
+            codes:
+                mappedDepartments.map(
+                    department =>
+                        department.code
+                ).filter(
+                    Boolean
+                )
+
+        };
     };
 
 
@@ -327,6 +496,45 @@ const CoursesPage = () => {
     };
 
 
+    const handleDepartmentSelection = (
+        event
+    ) => {
+
+        const selectedValues =
+            Array.from(
+                event.target.selectedOptions
+            ).map(
+                option =>
+                    String(
+                        option.value
+                    )
+            );
+
+        const normalizedValues =
+            selectedValues.filter(
+                Boolean
+            );
+
+
+        setFormData(
+            previous => ({
+
+                ...previous,
+
+                department_ids:
+                    normalizedValues,
+
+                department_id:
+                    normalizedValues[0] || ''
+
+            })
+        );
+
+
+        setError('');
+    };
+
+
     // ======================================================
     // RESET FORM
     // ======================================================
@@ -338,6 +546,8 @@ const CoursesPage = () => {
             session_id: '',
 
             department_id: '',
+
+            department_ids: [],
 
             course_code: '',
 
@@ -394,6 +604,41 @@ const CoursesPage = () => {
         );
 
 
+        const departmentIds =
+            Array.isArray(
+                course.department_ids
+            )
+                ? course.department_ids
+                    .map(
+                        value =>
+                            String(
+                                value
+                            ).trim()
+                    )
+                    .filter(
+                        Boolean
+                    )
+                : typeof course.department_ids === 'string'
+                    ? course.department_ids
+                        .split(',')
+                        .map(
+                            value =>
+                                String(
+                                    value
+                                ).trim()
+                        )
+                        .filter(
+                            Boolean
+                        )
+                    : course.department_id
+                        ? [
+                            String(
+                                course.department_id
+                            )
+                        ]
+                        : [];
+
+
         setFormData({
 
             session_id:
@@ -401,8 +646,12 @@ const CoursesPage = () => {
                 '',
 
             department_id:
+                departmentIds[0] ||
                 course.department_id ||
                 '',
+
+            department_ids:
+                departmentIds,
 
             course_code:
                 course.course_code ||
@@ -522,12 +771,46 @@ const CoursesPage = () => {
         }
 
 
+        const selectedDepartmentIds =
+            (formData.department_ids &&
+            formData.department_ids.length > 0)
+                ? formData.department_ids
+                : formData.department_id
+                    ? [
+                        String(
+                            formData.department_id
+                        )
+                    ]
+                    : [];
+
+        const allowsMultipleDepartments =
+            Boolean(
+                formData.is_general_studies
+            ) ||
+            Boolean(
+                formData.combined_group_id
+            );
+
+
         if (
-            !formData.department_id
+            selectedDepartmentIds.length === 0
         ) {
 
             setError(
-                'Please select a department.'
+                'Please select at least one department.'
+            );
+
+            return false;
+        }
+
+
+        if (
+            !allowsMultipleDepartments &&
+            selectedDepartmentIds.length > 1
+        ) {
+
+            setError(
+                'Only general studies and combined courses can select multiple departments.'
             );
 
             return false;
@@ -618,6 +901,19 @@ const CoursesPage = () => {
             setSuccess('');
 
 
+            const selectedDepartmentIds =
+                (formData.department_ids &&
+                formData.department_ids.length > 0)
+                    ? formData.department_ids
+                    : formData.department_id
+                        ? [
+                            String(
+                                formData.department_id
+                            )
+                        ]
+                        : [];
+
+
             const response =
                 await api.post(
                     '/courses',
@@ -630,7 +926,12 @@ const CoursesPage = () => {
 
                         department_id:
                             Number(
-                                formData.department_id
+                                selectedDepartmentIds[0]
+                            ),
+
+                        department_ids:
+                            selectedDepartmentIds.map(
+                                Number
                             ),
 
                         course_code:
@@ -759,6 +1060,19 @@ const CoursesPage = () => {
             setSuccess('');
 
 
+            const selectedDepartmentIds =
+                (formData.department_ids &&
+                formData.department_ids.length > 0)
+                    ? formData.department_ids
+                    : formData.department_id
+                        ? [
+                            String(
+                                formData.department_id
+                            )
+                        ]
+                        : [];
+
+
             const response =
                 await api.put(
                     `/courses/${selectedCourse.id}`,
@@ -771,7 +1085,12 @@ const CoursesPage = () => {
 
                         department_id:
                             Number(
-                                formData.department_id
+                                selectedDepartmentIds[0]
+                            ),
+
+                        department_ids:
+                            selectedDepartmentIds.map(
+                                Number
                             ),
 
                         course_code:
@@ -1348,19 +1667,33 @@ const CoursesPage = () => {
 
                                                             <td>
 
-                                                                <strong>
-                                                                    {
-                                                                        course.department_name ||
-                                                                        '—'
-                                                                    }
-                                                                </strong>
+                                                                {(() => {
 
-                                                                <small>
-                                                                    {
-                                                                        course.department_code ||
-                                                                        ''
-                                                                    }
-                                                                </small>
+                                                                    const departmentDisplay =
+                                                                        getCourseDepartmentDisplay(
+                                                                            course
+                                                                        );
+
+                                                                    return (
+                                                                        <>
+                                                                            <strong>
+                                                                                {
+                                                                                    departmentDisplay.names.length > 0
+                                                                                        ? departmentDisplay.names.join(', ')
+                                                                                        : '—'
+                                                                                }
+                                                                            </strong>
+
+                                                                            <small>
+                                                                                {
+                                                                                    departmentDisplay.codes.length > 0
+                                                                                        ? departmentDisplay.codes.join(', ')
+                                                                                        : ''
+                                                                                }
+                                                                            </small>
+                                                                        </>
+                                                                    );
+                                                                })()}
 
                                                             </td>
 
@@ -1715,28 +2048,25 @@ const CoursesPage = () => {
                                         </label>
 
                                         <select
-                                            name="department_id"
+                                            name="department_ids"
                                             value={
-                                                formData.department_id
+                                                formData.department_ids
                                             }
                                             onChange={
-                                                handleChange
+                                                handleDepartmentSelection
                                             }
                                             disabled={
                                                 loadingOptions ||
                                                 saving
                                             }
-                                            required
+                                            multiple
+                                            size={
+                                                Math.min(
+                                                    6,
+                                                    departments.length || 4
+                                                )
+                                            }
                                         >
-
-                                            <option value="">
-                                                {
-                                                    loadingOptions
-                                                        ? 'Loading departments...'
-                                                        : 'Select Department'
-                                                }
-                                            </option>
-
 
                                             {
                                                 departments.map(
@@ -1770,6 +2100,10 @@ const CoursesPage = () => {
                                             }
 
                                         </select>
+
+                                        <small>
+                                            Hold Ctrl/Cmd to select multiple departments for General Studies or Combined courses.
+                                        </small>
 
                                     </div>
 
@@ -2026,7 +2360,7 @@ const CoursesPage = () => {
                                                 handleChange
                                             }
                                             min="1"
-                                            placeholder="Optional"
+                                            placeholder="Optional - leave blank if not used"
                                             disabled={
                                                 saving
                                             }
@@ -2188,12 +2522,23 @@ const CoursesPage = () => {
                                         Department
                                     </span>
 
-                                    <strong>
-                                        {
-                                            selectedCourse.department_name ||
-                                            '—'
-                                        }
-                                    </strong>
+                                    {(() => {
+
+                                        const departmentDisplay =
+                                            getCourseDepartmentDisplay(
+                                                selectedCourse
+                                            );
+
+                                        return (
+                                            <strong>
+                                                {
+                                                    departmentDisplay.names.length > 0
+                                                        ? departmentDisplay.names.join(', ')
+                                                        : '—'
+                                                }
+                                            </strong>
+                                        );
+                                    })()}
 
                                 </div>
 

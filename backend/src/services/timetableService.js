@@ -1394,43 +1394,66 @@ const deleteTimetable = async (
         // CHECK COMPLAINTS
         // --------------------------------------------------
 
-        const [complaintRows] =
-            await connection.query(
-                `SELECT
-                    COUNT(*) AS total
+        let complaintCount = 0;
 
-                 FROM complaints c
+        try {
 
-                 INNER JOIN timetable_entries te
-                    ON c.timetable_entry_id =
-                       te.id
+            const [complaintRows] =
+                await connection.query(
+                    `SELECT
+                        COUNT(*) AS total
 
-                 WHERE te.timetable_id = ?`,
-                [
-                    Number(timetableId)
-                ]
-            );
+                     FROM complaints c
 
+                     INNER JOIN timetable_entries te
+                        ON c.timetable_entry_id =
+                           te.id
 
-        const complaintCount =
-            Number(
-                complaintRows[0]?.total ||
-                0
-            );
-
-
-        if (
-            complaintCount > 0
-        ) {
-
-            const error =
-                new Error(
-                    `Cannot delete this timetable because ${complaintCount} complaint record(s) are linked to it.`
+                     WHERE te.timetable_id = ?`,
+                    [
+                        Number(timetableId)
+                    ]
                 );
 
-            error.statusCode = 409;
 
-            throw error;
+            complaintCount =
+                Number(
+                    complaintRows[0]?.total ||
+                    0
+                );
+
+
+            if (
+                complaintCount > 0
+            ) {
+
+                const error =
+                    new Error(
+                        `Cannot delete this timetable because ${complaintCount} complaint record(s) are linked to it.`
+                    );
+
+                error.statusCode = 409;
+
+                throw error;
+            }
+
+        } catch (error) {
+
+            // Ignore only a missing complaints table.
+            // Some deployments do not create the complaint module.
+            const message =
+                String(
+                    error.message || ''
+                ).toLowerCase();
+
+            if (
+                !message.includes("doesn't exist") &&
+                !message.includes('does not exist') &&
+                !message.includes('no such table')
+            ) {
+
+                throw error;
+            }
         }
 
 
@@ -1438,39 +1461,60 @@ const deleteTimetable = async (
         // CHECK AUDIT LOG
         // --------------------------------------------------
 
-        const [auditRows] =
-            await connection.query(
-                `SELECT
-                    COUNT(*) AS total
+        let auditCount = 0;
 
-                 FROM timetable_audit_log
+        try {
 
-                 WHERE timetable_id = ?`,
-                [
-                    Number(timetableId)
-                ]
-            );
+            const [auditRows] =
+                await connection.query(
+                    `SELECT
+                        COUNT(*) AS total
 
+                     FROM timetable_audit_log
 
-        const auditCount =
-            Number(
-                auditRows[0]?.total ||
-                0
-            );
-
-
-        if (
-            auditCount > 0
-        ) {
-
-            const error =
-                new Error(
-                    `Cannot delete this timetable because ${auditCount} audit record(s) are linked to it.`
+                     WHERE timetable_id = ?`,
+                    [
+                        Number(timetableId)
+                    ]
                 );
 
-            error.statusCode = 409;
 
-            throw error;
+            auditCount =
+                Number(
+                    auditRows[0]?.total ||
+                    0
+                );
+
+
+            if (
+                auditCount > 0
+            ) {
+
+                const error =
+                    new Error(
+                        `Cannot delete this timetable because ${auditCount} audit record(s) are linked to it.`
+                    );
+
+                error.statusCode = 409;
+
+                throw error;
+            }
+
+        } catch (error) {
+
+            const message =
+                String(
+                    error.message || ''
+                ).toLowerCase();
+
+            if (
+                !message.includes("doesn't exist") &&
+                !message.includes('does not exist') &&
+                !message.includes('no such table')
+            ) {
+
+                throw error;
+            }
         }
 
 

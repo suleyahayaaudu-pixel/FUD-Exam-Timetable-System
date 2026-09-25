@@ -43,6 +43,78 @@ const calculateRegisteredStudents = (
 };
 
 
+const normalizeDepartmentIds = (
+    value,
+    fallbackId = null
+) => {
+
+    const rawValues =
+        Array.isArray(value)
+            ? value
+            : value === undefined || value === null || value === ''
+                ? []
+                : [value];
+
+    const ids =
+        rawValues
+            .flatMap(
+                item => {
+
+                    if (
+                        Array.isArray(item)
+                    ) {
+
+                        return item;
+                    }
+
+                    if (
+                        typeof item === 'string'
+                    ) {
+
+                        return item
+                            .split(',')
+                            .map(
+                                part =>
+                                    part.trim()
+                            )
+                            .filter(
+                                part =>
+                                    part.length > 0
+                            );
+                    }
+
+                    return [item];
+                }
+            )
+            .map(
+                item => Number(item)
+            )
+            .filter(
+                item =>
+                    Number.isInteger(item) &&
+                    item > 0
+            );
+
+    if (
+        ids.length === 0 &&
+        fallbackId !== null &&
+        fallbackId !== undefined &&
+        fallbackId !== ''
+    ) {
+
+        return [
+            Number(
+                fallbackId
+            )
+        ];
+    }
+
+    return [
+        ...new Set(ids)
+    ];
+};
+
+
 // ==========================================================
 // GET ALL COURSES
 // ==========================================================
@@ -88,6 +160,9 @@ const getCourses = async (
             SELECT
                 c.id,
                 c.department_id,
+                GROUP_CONCAT(DISTINCT cdl.department_id ORDER BY cdl.department_id SEPARATOR ',') AS department_ids,
+                GROUP_CONCAT(DISTINCT d2.name ORDER BY d2.name SEPARATOR ', ') AS department_names,
+                GROUP_CONCAT(DISTINCT d2.short_code ORDER BY d2.short_code SEPARATOR ', ') AS department_codes,
 
                 d.name AS department_name,
                 d.short_code AS department_code,
@@ -117,6 +192,12 @@ const getCourses = async (
 
             INNER JOIN departments d
                 ON c.department_id = d.id
+
+            LEFT JOIN course_department_links cdl
+                ON cdl.course_id = c.id
+
+            LEFT JOIN departments d2
+                ON d2.id = cdl.department_id
 
             INNER JOIN academic_sessions s
                 ON c.session_id = s.id
@@ -234,6 +315,29 @@ const getCourses = async (
 
 
         sql += `
+            GROUP BY
+                c.id,
+                c.department_id,
+                d.name,
+                d.short_code,
+                d2.name,
+                d2.short_code,
+                c.session_id,
+                s.session_name,
+                s.semester,
+                c.course_code,
+                c.course_title,
+                c.level,
+                c.credit_units,
+                c.registered_students,
+                c.regular_students,
+                c.spillover_students,
+                c.carryover_students,
+                c.is_general_studies,
+                c.combined_group_id,
+                c.is_active,
+                c.created_at,
+                c.updated_at
             ORDER BY
                 s.session_name DESC,
                 s.semester ASC,
@@ -243,10 +347,243 @@ const getCourses = async (
         `;
 
 
-        const [courses] =
-            await db.query(
-                sql,
-                params
+        let courses;
+
+        try {
+
+            [courses] =
+                await db.query(
+                    sql,
+                    params
+                );
+
+        } catch (error) {
+
+            const message =
+                String(
+                    error.message || ''
+                ).toLowerCase();
+
+            if (
+                !message.includes("doesn't exist") &&
+                !message.includes('does not exist') &&
+                !message.includes('no such table')
+            ) {
+
+                throw error;
+            }
+
+            let fallbackSql = `
+                SELECT
+                    c.id,
+                    c.department_id,
+                    c.department_id AS department_ids,
+                    d.name AS department_names,
+                    d.short_code AS department_codes,
+
+                    d.name AS department_name,
+                    d.short_code AS department_code,
+
+                    c.session_id,
+                    s.session_name,
+                    s.semester,
+                    c.course_code,
+                    c.course_title,
+                    c.level,
+                    c.credit_units,
+                    c.registered_students,
+                    c.regular_students,
+                    c.spillover_students,
+                    c.carryover_students,
+                    c.is_general_studies,
+                    c.combined_group_id,
+                    c.is_active,
+                    c.created_at,
+                    c.updated_at
+
+                FROM courses c
+
+                INNER JOIN departments d
+                    ON c.department_id = d.id
+
+                INNER JOIN academic_sessions s
+                    ON c.session_id = s.id
+
+                WHERE d.faculty_id = ?
+                AND s.faculty_id = ?
+            `;
+
+            const fallbackParams = [
+                facultyId,
+                facultyId
+            ];
+
+            if (
+                userRole ===
+                'departmental_coordinator'
+            ) {
+
+                fallbackSql += `
+                    AND c.department_id = ?
+                `;
+
+                fallbackParams.push(
+                    userDepartmentId
+                );
+
+            } else if (
+                department_id
+            ) {
+
+                fallbackSql += `
+                    AND c.department_id = ?
+                `;
+
+                fallbackParams.push(
+                    Number(
+                        department_id
+                    )
+                );
+            }
+
+            if (
+                session_id
+            ) {
+
+                fallbackSql += `
+                    AND c.session_id = ?
+                `;
+
+                fallbackParams.push(
+                    Number(
+                        session_id
+                    )
+                );
+            }
+
+            if (
+                level
+            ) {
+
+                fallbackSql += `
+                    AND c.level = ?
+                `;
+
+                fallbackParams.push(
+                    Number(
+                        level
+                    )
+                );
+            }
+
+            if (
+                is_active === 'true' ||
+                is_active === 'false'
+            ) {
+
+                fallbackSql += `
+                    AND c.is_active = ?
+                `;
+
+                fallbackParams.push(
+                    is_active === 'true'
+                );
+            }
+
+            fallbackSql += `
+                ORDER BY
+                    s.session_name DESC,
+                    s.semester ASC,
+                    d.short_code ASC,
+                    c.level ASC,
+                    c.course_code ASC
+            `;
+
+            [courses] =
+                await db.query(
+                    fallbackSql,
+                    fallbackParams
+                );
+        }
+
+
+        const normalizedCourses =
+            courses.map(
+                course => {
+
+                    const departmentIds =
+                        course.department_ids
+                            ? String(
+                                course.department_ids
+                            )
+                                .split(',')
+                                .filter(
+                                    value =>
+                                        value
+                                )
+                                .map(
+                                    value =>
+                                        Number(value)
+                                )
+                            : [
+                                Number(
+                                    course.department_id
+                                )
+                            ];
+
+                    const departmentNames =
+                        course.department_names
+                            ? String(
+                                course.department_names
+                            )
+                                .split(',')
+                                .map(
+                                    value =>
+                                        value.trim()
+                                )
+                                .filter(
+                                    Boolean
+                                )
+                            : [
+                                course.department_name
+                            ].filter(
+                                Boolean
+                            );
+
+                    const departmentCodes =
+                        course.department_codes
+                            ? String(
+                                course.department_codes
+                            )
+                                .split(',')
+                                .map(
+                                    value =>
+                                        value.trim()
+                                )
+                                .filter(
+                                    Boolean
+                                )
+                            : [
+                                course.department_code
+                            ].filter(
+                                Boolean
+                            );
+
+                    return {
+
+                        ...course,
+
+                        department_ids:
+                            departmentIds,
+
+                        department_names:
+                            departmentNames,
+
+                        department_codes:
+                            departmentCodes
+
+                    };
+                }
             );
 
 
@@ -255,9 +592,10 @@ const getCourses = async (
             success: true,
 
             count:
-                courses.length,
+                normalizedCourses.length,
 
-            courses
+            courses:
+                normalizedCourses
 
         });
 
@@ -321,53 +659,147 @@ const getCourseById = async (
                 : null;
 
 
-        const [rows] =
-            await db.query(
-                `SELECT
-                    c.id,
-                    c.department_id,
+        let rows;
 
-                    d.name AS department_name,
-                    d.short_code AS department_code,
+        try {
 
-                    c.session_id,
+            [rows] =
+                await db.query(
+                    `SELECT
+                        c.id,
+                        c.department_id,
+                        GROUP_CONCAT(DISTINCT cdl.department_id ORDER BY cdl.department_id SEPARATOR ',') AS department_ids,
 
-                    s.session_name,
-                    s.semester,
+                        d.name AS department_name,
+                        d.short_code AS department_code,
 
-                    c.course_code,
-                    c.course_title,
-                    c.level,
-                    c.credit_units,
+                        c.session_id,
 
-                    c.registered_students,
-                    c.regular_students,
-                    c.spillover_students,
-                    c.carryover_students,
+                        s.session_name,
+                        s.semester,
 
-                    c.is_general_studies,
-                    c.combined_group_id,
-                    c.is_active
+                        c.course_code,
+                        c.course_title,
+                        c.level,
+                        c.credit_units,
 
-                 FROM courses c
+                        c.registered_students,
+                        c.regular_students,
+                        c.spillover_students,
+                        c.carryover_students,
 
-                 INNER JOIN departments d
-                    ON c.department_id = d.id
+                        c.is_general_studies,
+                        c.combined_group_id,
+                        c.is_active
 
-                 INNER JOIN academic_sessions s
-                    ON c.session_id = s.id
+                     FROM courses c
 
-                 WHERE c.id = ?
-                 AND d.faculty_id = ?
-                 AND s.faculty_id = ?
+                     INNER JOIN departments d
+                        ON c.department_id = d.id
 
-                 LIMIT 1`,
-                [
-                    courseId,
-                    facultyId,
-                    facultyId
-                ]
-            );
+                     LEFT JOIN course_department_links cdl
+                        ON cdl.course_id = c.id
+
+                     INNER JOIN academic_sessions s
+                        ON c.session_id = s.id
+
+                     WHERE c.id = ?
+                     AND d.faculty_id = ?
+                     AND s.faculty_id = ?
+
+                     GROUP BY
+                        c.id,
+                        c.department_id,
+                        d.name,
+                        d.short_code,
+                        c.session_id,
+                        s.session_name,
+                        s.semester,
+                        c.course_code,
+                        c.course_title,
+                        c.level,
+                        c.credit_units,
+                        c.registered_students,
+                        c.regular_students,
+                        c.spillover_students,
+                        c.carryover_students,
+                        c.is_general_studies,
+                        c.combined_group_id,
+                        c.is_active
+
+                     LIMIT 1`,
+                    [
+                        courseId,
+                        facultyId,
+                        facultyId
+                    ]
+                );
+
+        } catch (error) {
+
+            const message =
+                String(
+                    error.message || ''
+                ).toLowerCase();
+
+            if (
+                !message.includes("doesn't exist") &&
+                !message.includes('does not exist') &&
+                !message.includes('no such table')
+            ) {
+
+                throw error;
+            }
+
+            [rows] =
+                await db.query(
+                    `SELECT
+                        c.id,
+                        c.department_id,
+                        c.department_id AS department_ids,
+
+                        d.name AS department_name,
+                        d.short_code AS department_code,
+
+                        c.session_id,
+
+                        s.session_name,
+                        s.semester,
+
+                        c.course_code,
+                        c.course_title,
+                        c.level,
+                        c.credit_units,
+
+                        c.registered_students,
+                        c.regular_students,
+                        c.spillover_students,
+                        c.carryover_students,
+
+                        c.is_general_studies,
+                        c.combined_group_id,
+                        c.is_active
+
+                     FROM courses c
+
+                     INNER JOIN departments d
+                        ON c.department_id = d.id
+
+                     INNER JOIN academic_sessions s
+                        ON c.session_id = s.id
+
+                     WHERE c.id = ?
+                     AND d.faculty_id = ?
+                     AND s.faculty_id = ?
+
+                     LIMIT 1`,
+                    [
+                        courseId,
+                        facultyId,
+                        facultyId
+                    ]
+                );
+        }
 
 
         if (
@@ -387,6 +819,31 @@ const getCourseById = async (
 
         const course =
             rows[0];
+
+        if (
+            course
+        ) {
+
+            course.department_ids =
+                course.department_ids
+                    ? String(
+                        course.department_ids
+                    )
+                        .split(',')
+                        .filter(
+                            value =>
+                                value
+                        )
+                        .map(
+                            value =>
+                                Number(value)
+                        )
+                    : [
+                        Number(
+                            course.department_id
+                        )
+                    ];
+        }
 
 
         if (
@@ -475,6 +932,7 @@ const createCourse = async (
 
         let {
             department_id,
+            department_ids,
             session_id,
             course_code,
             course_title,
@@ -509,6 +967,13 @@ const createCourse = async (
         }
 
 
+        const selectedDepartmentIds =
+            normalizeDepartmentIds(
+                department_ids,
+                department_id
+            );
+
+
         if (
             userRole ===
             'departmental_coordinator'
@@ -531,13 +996,26 @@ const createCourse = async (
 
             department_id =
                 userDepartmentId;
+
+            selectedDepartmentIds.splice(
+                0,
+                selectedDepartmentIds.length,
+                userDepartmentId
+            );
         }
 
 
+        const allowsMultipleDepartments =
+            Boolean(
+                is_general_studies
+            ) ||
+            Boolean(
+                combined_group_id
+            );
+
+
         if (
-            userRole ===
-            'exam_officer' &&
-            !department_id
+            selectedDepartmentIds.length === 0
         ) {
 
             return res.status(400).json({
@@ -548,6 +1026,34 @@ const createCourse = async (
                     'Department is required'
 
             });
+        }
+
+
+        if (
+            !allowsMultipleDepartments &&
+            selectedDepartmentIds.length > 1
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    'Only general studies and combined courses can select multiple departments'
+
+            });
+        }
+
+
+        if (
+            userRole ===
+            'exam_officer' &&
+            !department_id &&
+            selectedDepartmentIds.length > 0
+        ) {
+
+            department_id =
+                selectedDepartmentIds[0];
         }
 
 
@@ -623,22 +1129,18 @@ const createCourse = async (
 
                  FROM departments
 
-                 WHERE id = ?
-                 AND faculty_id = ?
-
-                 LIMIT 1`,
+                 WHERE id IN (?)
+                 AND faculty_id = ?`,
                 [
-                    Number(
-                        department_id
-                    ),
-
+                    selectedDepartmentIds,
                     facultyId
                 ]
             );
 
 
         if (
-            departmentRows.length === 0
+            departmentRows.length !==
+            selectedDepartmentIds.length
         ) {
 
             return res.status(400).json({
@@ -646,10 +1148,20 @@ const createCourse = async (
                 success: false,
 
                 message:
-                    'Invalid department for this faculty'
+                    'One or more departments are invalid for this faculty'
 
             });
         }
+
+        const primaryDepartment =
+            departmentRows.find(
+                row =>
+                    Number(
+                        row.id
+                    ) === Number(
+                        selectedDepartmentIds[0]
+                    )
+            ) || departmentRows[0];
 
 
         // --------------------------------------------------
@@ -715,7 +1227,7 @@ const createCourse = async (
                  FROM courses
 
                  WHERE session_id = ?
-                 AND course_code = ?
+                 AND LOWER(course_code) = LOWER(?)
 
                  LIMIT 1`,
                 [
@@ -744,11 +1256,22 @@ const createCourse = async (
 
 
         // --------------------------------------------------
-        // COMBINED GROUP
+        // COMBINED GROUP (OPTIONAL)
         // --------------------------------------------------
 
+        const normalizedCombinedGroupId =
+            combined_group_id === '' ||
+            combined_group_id === null ||
+            combined_group_id === undefined ||
+            combined_group_id === '0'
+                ? null
+                : Number(
+                    combined_group_id
+                );
+
+
         if (
-            combined_group_id
+            normalizedCombinedGroupId
         ) {
 
             const [groupRows] =
@@ -763,10 +1286,7 @@ const createCourse = async (
 
                      LIMIT 1`,
                     [
-                        Number(
-                            combined_group_id
-                        ),
-
+                        normalizedCombinedGroupId,
                         Number(
                             session_id
                         )
@@ -778,15 +1298,14 @@ const createCourse = async (
                 groupRows.length === 0
             ) {
 
-                return res.status(400).json({
-
-                    success: false,
-
-                    message:
-                        'Combined group does not belong to the selected semester'
-
-                });
+                // Keep the course creation flexible for departments using
+                // general studies / combined registrations without a formal
+                // combined-group record yet.
+                combined_group_id = null;
             }
+        } else {
+
+            combined_group_id = null;
         }
 
 
@@ -821,7 +1340,8 @@ const createCourse = async (
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
                 [
                     Number(
-                        department_id
+                        department_id ||
+                        selectedDepartmentIds[0]
                     ),
 
                     Number(
@@ -863,6 +1383,55 @@ const createCourse = async (
             );
 
 
+        if (
+            selectedDepartmentIds.length > 0
+        ) {
+
+            try {
+
+                const courseDepartmentRows =
+                    selectedDepartmentIds.map(
+                        courseDepartmentId => [
+                            Number(
+                                result.insertId
+                            ),
+                            Number(
+                                courseDepartmentId
+                            )
+                        ]
+                    );
+
+                await db.query(
+                    `INSERT IGNORE INTO course_department_links
+                    (
+                        course_id,
+                        department_id
+                    )
+                    VALUES ?`,
+                    [
+                        courseDepartmentRows
+                    ]
+                );
+
+            } catch (insertError) {
+
+                const message =
+                    String(
+                        insertError.message || ''
+                    ).toLowerCase();
+
+                if (
+                    !message.includes("doesn't exist") &&
+                    !message.includes('does not exist') &&
+                    !message.includes('no such table')
+                ) {
+
+                    throw insertError;
+                }
+            }
+        }
+
+
         return res.status(201).json({
 
             success: true,
@@ -877,14 +1446,15 @@ const createCourse = async (
 
                 department_id:
                     Number(
-                        department_id
+                        department_id ||
+                        selectedDepartmentIds[0]
                     ),
 
                 department_name:
-                    departmentRows[0].name,
+                    primaryDepartment.name,
 
                 department_code:
-                    departmentRows[0].short_code,
+                    primaryDepartment.short_code,
 
                 session_id:
                     Number(
@@ -1005,8 +1575,16 @@ const updateCourse = async (
                 : null;
 
 
+        const selectedDepartmentIds =
+            normalizeDepartmentIds(
+                req.body.department_ids,
+                req.body.department_id
+            );
+
+
         let {
             department_id,
+            department_ids,
             session_id,
             course_code,
             course_title,
@@ -1180,6 +1758,12 @@ const updateCourse = async (
             department_id =
                 userDepartmentId;
 
+            selectedDepartmentIds.splice(
+                0,
+                selectedDepartmentIds.length,
+                userDepartmentId
+            );
+
 
         } else if (
             userRole ===
@@ -1187,7 +1771,7 @@ const updateCourse = async (
         ) {
 
             if (
-                !department_id
+                selectedDepartmentIds.length === 0
             ) {
 
                 return res.status(400).json({
@@ -1199,6 +1783,9 @@ const updateCourse = async (
 
                 });
             }
+
+            department_id =
+                selectedDepartmentIds[0];
         }
 
 
@@ -1215,22 +1802,18 @@ const updateCourse = async (
 
                  FROM departments
 
-                 WHERE id = ?
-                 AND faculty_id = ?
-
-                 LIMIT 1`,
+                 WHERE id IN (?)
+                 AND faculty_id = ?`,
                 [
-                    Number(
-                        department_id
-                    ),
-
+                    selectedDepartmentIds,
                     facultyId
                 ]
             );
 
 
         if (
-            departmentRows.length === 0
+            departmentRows.length !==
+            selectedDepartmentIds.length
         ) {
 
             return res.status(400).json({
@@ -1238,10 +1821,20 @@ const updateCourse = async (
                 success: false,
 
                 message:
-                    'Invalid department'
+                    'One or more departments are invalid for this faculty'
 
             });
         }
+
+        const primaryDepartment =
+            departmentRows.find(
+                row =>
+                    Number(
+                        row.id
+                    ) === Number(
+                        selectedDepartmentIds[0]
+                    )
+            ) || departmentRows[0];
 
 
         // --------------------------------------------------
@@ -1306,7 +1899,7 @@ const updateCourse = async (
                  FROM courses
 
                  WHERE session_id = ?
-                 AND course_code = ?
+                 AND LOWER(course_code) = LOWER(?)
                  AND id <> ?
 
                  LIMIT 1`,
@@ -1338,11 +1931,22 @@ const updateCourse = async (
 
 
         // --------------------------------------------------
-        // COMBINED GROUP
+        // COMBINED GROUP (OPTIONAL)
         // --------------------------------------------------
 
+        const normalizedCombinedGroupId =
+            combined_group_id === '' ||
+            combined_group_id === null ||
+            combined_group_id === undefined ||
+            combined_group_id === '0'
+                ? null
+                : Number(
+                    combined_group_id
+                );
+
+
         if (
-            combined_group_id
+            normalizedCombinedGroupId
         ) {
 
             const [groupRows] =
@@ -1357,10 +1961,7 @@ const updateCourse = async (
 
                      LIMIT 1`,
                     [
-                        Number(
-                            combined_group_id
-                        ),
-
+                        normalizedCombinedGroupId,
                         Number(
                             session_id
                         )
@@ -1372,15 +1973,11 @@ const updateCourse = async (
                 groupRows.length === 0
             ) {
 
-                return res.status(400).json({
-
-                    success: false,
-
-                    message:
-                        'Invalid combined group for selected semester'
-
-                });
+                combined_group_id = null;
             }
+        } else {
+
+            combined_group_id = null;
         }
 
 
@@ -1413,7 +2010,8 @@ const updateCourse = async (
                  WHERE id = ?`,
                 [
                     Number(
-                        department_id
+                        department_id ||
+                        selectedDepartmentIds[0]
                     ),
 
                     Number(
@@ -1469,6 +2067,55 @@ const updateCourse = async (
                     'Course not found'
 
             });
+        }
+
+
+        if (
+            selectedDepartmentIds.length > 0
+        ) {
+
+            try {
+
+                const courseDepartmentRows =
+                    selectedDepartmentIds.map(
+                        courseDepartmentId => [
+                            Number(
+                                courseId
+                            ),
+                            Number(
+                                courseDepartmentId
+                            )
+                        ]
+                    );
+
+                await db.query(
+                    `INSERT IGNORE INTO course_department_links
+                    (
+                        course_id,
+                        department_id
+                    )
+                    VALUES ?`,
+                    [
+                        courseDepartmentRows
+                    ]
+                );
+
+            } catch (insertError) {
+
+                const message =
+                    String(
+                        insertError.message || ''
+                    ).toLowerCase();
+
+                if (
+                    !message.includes("doesn't exist") &&
+                    !message.includes('does not exist') &&
+                    !message.includes('no such table')
+                ) {
+
+                    throw insertError;
+                }
+            }
         }
 
 

@@ -1119,38 +1119,60 @@ const deleteInvigilator = async (
         // CHECK TIMETABLE ASSIGNMENTS
         // --------------------------------------------------
 
-        const [assignmentRows] =
-            await db.query(
-                `SELECT
-                    COUNT(*) AS total
+        let assignmentCount = 0;
 
-                 FROM timetable_entries
+        try {
 
-                 WHERE invigilator_id = ?`,
-                [
-                    invigilatorId
-                ]
-            );
+            const [assignmentRows] =
+                await db.query(
+                    `SELECT
+                        COUNT(*) AS total
 
+                     FROM timetable_entry_invigilators
 
-        const assignmentCount =
-            Number(
-                assignmentRows[0].total
-            );
+                     WHERE invigilator_id = ?`,
+                    [
+                        invigilatorId
+                    ]
+                );
 
 
-        if (
-            assignmentCount > 0
-        ) {
+            assignmentCount =
+                Number(
+                    assignmentRows[0]?.total ||
+                    0
+                );
 
-            return res.status(409).json({
 
-                success: false,
+            if (
+                assignmentCount > 0
+            ) {
 
-                message:
-                    `Cannot delete ${invigilator.staff_id} because the invigilator is assigned to ${assignmentCount} timetable examination record(s).`
+                return res.status(409).json({
 
-            });
+                    success: false,
+
+                    message:
+                        `Cannot delete ${invigilator.staff_id} because the invigilator is assigned to ${assignmentCount} timetable examination record(s).`
+
+                });
+            }
+
+        } catch (error) {
+
+            const message =
+                String(
+                    error.message || ''
+                ).toLowerCase();
+
+            if (
+                !message.includes("doesn't exist") &&
+                !message.includes('does not exist') &&
+                !message.includes('no such table')
+            ) {
+
+                throw error;
+            }
         }
 
 

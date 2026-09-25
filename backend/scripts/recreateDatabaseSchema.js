@@ -130,6 +130,24 @@ const schemaSql = [
     `,
 
     `
+    CREATE TABLE IF NOT EXISTS course_department_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT NOT NULL,
+        department_id INT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_course_department (course_id, department_id),
+        KEY idx_course_department_course (course_id),
+        KEY idx_course_department_department (department_id),
+        CONSTRAINT fk_course_department_course
+            FOREIGN KEY (course_id) REFERENCES courses(id)
+            ON DELETE CASCADE,
+        CONSTRAINT fk_course_department_department
+            FOREIGN KEY (department_id) REFERENCES departments(id)
+            ON DELETE CASCADE
+    )
+    `,
+
+    `
     CREATE TABLE IF NOT EXISTS students (
         id INT AUTO_INCREMENT PRIMARY KEY,
         department_id INT NOT NULL,
