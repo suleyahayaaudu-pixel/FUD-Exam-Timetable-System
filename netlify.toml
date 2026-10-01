@@ -1,0 +1,14 @@
+[build]
+  base = "frontend"
+  command = "npm install && npm run build"
+  publish = "build"
+
+[build.environment]
+  # Create React App treats lint warnings as errors when CI=true
+  CI = "false"
+
+# Client-side routing (react-router) fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
